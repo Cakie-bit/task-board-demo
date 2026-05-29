@@ -1,121 +1,177 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
 
+interface Task {
+  id: string
+  title: string
+  column: 'todo' | 'inProgress' | 'done'
+}
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [tasks, setTasks] = useState<Task[]>([
+    { id: '1', title: 'Design UI mockups', column: 'done' },
+    { id: '2', title: 'Set up project repository', column: 'done' },
+    { id: '3', title: 'Implement task board component', column: 'inProgress' },
+    { id: '4', title: 'Add drag and drop functionality', column: 'todo' },
+    { id: '5', title: 'Write tests', column: 'todo' },
+  ])
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+
+  const addTask = () => {
+    if (newTaskTitle.trim()) {
+      const newTask: Task = {
+        id: Date.now().toString(),
+        title: newTaskTitle,
+        column: 'todo',
+      }
+      setTasks([...tasks, newTask])
+      setNewTaskTitle('')
+    }
+  }
+
+  const deleteTask = (id: string) => {
+    setTasks(tasks.filter((task) => task.id !== id))
+  }
+
+  const moveTask = (id: string, newColumn: 'todo' | 'inProgress' | 'done') => {
+    setTasks(
+      tasks.map((task) =>
+        task.id === id ? { ...task, column: newColumn } : task
+      )
+    )
+  }
+
+  const getTasksByColumn = (column: 'todo' | 'inProgress' | 'done') => {
+    return tasks.filter((task) => task.column === column)
+  }
+
+  const handleDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    taskId: string
+  ) => {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('taskId', taskId)
+  }
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (
+    e: React.DragEvent<HTMLDivElement>,
+    column: 'todo' | 'inProgress' | 'done'
+  ) => {
+    e.preventDefault()
+    const taskId = e.dataTransfer.getData('taskId')
+    moveTask(taskId, column)
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
+    <div className="task-board-container">
+      <h1>Task Board</h1>
+
+      <div className="add-task-section">
+        <input
+          type="text"
+          placeholder="Enter a new task..."
+          value={newTaskTitle}
+          onChange={(e) => setNewTaskTitle(e.target.value)}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              addTask()
+            }
+          }}
+          className="task-input"
+        />
+        <button onClick={addTask} className="add-task-btn">
+          Add Task
         </button>
-      </section>
+      </div>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <div className="board">
+        <div
+          className="column"
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, 'todo')}
+        >
+          <h2>Todo</h2>
+          <div className="tasks">
+            {getTasksByColumn('todo').map((task) => (
+              <div
+                key={task.id}
+                className="task"
+                draggable
+                onDragStart={(e) => handleDragStart(e, task.id)}
+              >
+                <span className="task-title">{task.title}</span>
+                <button
+                  className="delete-btn"
+                  onClick={() => deleteTask(task.id)}
+                  title="Delete task"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        <div
+          className="column"
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, 'inProgress')}
+        >
+          <h2>In Progress</h2>
+          <div className="tasks">
+            {getTasksByColumn('inProgress').map((task) => (
+              <div
+                key={task.id}
+                className="task"
+                draggable
+                onDragStart={(e) => handleDragStart(e, task.id)}
+              >
+                <span className="task-title">{task.title}</span>
+                <button
+                  className="delete-btn"
+                  onClick={() => deleteTask(task.id)}
+                  title="Delete task"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div
+          className="column"
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, 'done')}
+        >
+          <h2>Done</h2>
+          <div className="tasks">
+            {getTasksByColumn('done').map((task) => (
+              <div
+                key={task.id}
+                className="task completed"
+                draggable
+                onDragStart={(e) => handleDragStart(e, task.id)}
+              >
+                <span className="task-title">{task.title}</span>
+                <button
+                  className="delete-btn"
+                  onClick={() => deleteTask(task.id)}
+                  title="Delete task"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
